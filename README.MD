@@ -1,0 +1,2 @@
+-- App.py for frontend (STREAMLIT)
+-- Main.py for backend (FastAPI)
