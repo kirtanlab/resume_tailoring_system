@@ -1,33 +1,19 @@
-from pdfminer.high_level import extract_text
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from pydantic import BaseModel
 import shutil
 import os
 import uuid
 import logging
+from resume_agent import ResumeAgent
+from jd_agent import JD_agent
 
 app = FastAPI()
-
-# Temporary storage (only in memory)
-class ResumeJDData(BaseModel):
-    resume_text: str
-    job_description: str
-
-class JobDescriptionData(BaseModel):
-    resume_id: str
-    job_description: str
 
 # Logging configuration to print to console
 logging.basicConfig(level=logging.INFO)
 
-@app.post("/process")
-def process_resume(data: ResumeJDData):
-    # Simulate AI processing
-    tailored_resume = f"Processed Resume:\n\n{data.resume_text}\n\nMatched with:\n\n{data.job_description}"
-    return {"tailored_resume": tailored_resume}
-
-@app.post("/upload-resume")
-async def upload_resume(file: UploadFile = File(...)):
+@app.post("/upload-resume-jd")
+async def upload_resume_jd(file: UploadFile = File(...), job_description: str = Form(...)):
     # Generate a unique filename
     file_id = str(uuid.uuid4())
     file_path = f"/tmp/{file_id}.pdf"
@@ -35,19 +21,32 @@ async def upload_resume(file: UploadFile = File(...)):
     # Save the file temporarily
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    
+    # Log the received job description
+    if(job_description and file_id): 
+        print("Content received")
+    else: 
+        return "No Content Received"
 
-    return {"resume_id": file_id, "message": "Resume uploaded successfully"}
+    # logging.info(f"Received Job Description for Resume ID {file_id}:")
+    # logging.info(job_description)
+    
+    #------------------------RESUME AGENT----------------------------------------
 
-@app.post("/upload-jd")
-async def upload_job_description(data: JobDescriptionData):
-    # Print the job description to the console
-    logging.info(f"Received Job Description for Resume ID {data.resume_id}:")
-    logging.info(data.job_description)
+    # Process resume with AI model 
+    resume_agent = ResumeAgent(file_path)
+    resume_content = resume_agent.analyze_resume()
 
-    # For now, just returning the received job description
-    return {"message": "Job description received and logged", "job_description": data.job_description}     
+    #------------------------JD AGENT----------------------------------------
 
-# pdf_path = "/home/kirtan/Documents/resume_tailoring_system/kirtan_latex_resume.pdf"  # Replace with your PDF file
-# text = extract_text(pdf_path)
+    #process jd with AI model 
+    jd_agent = JD_agent(job_description)
+    jd_extract = jd_agent.analyze_jd()
 
+    print("jd_extract: ",jd_extract)
 
+    return {
+        "resume_id": file_id,
+        "message": "Resume and Job Description processed successfully",
+        "tailored_resume": jd_extract['content']
+    }
