@@ -14,5 +14,6 @@
 
 **TODOS**
 
+0. Create Cordinator agent
 1. Prompt Engineering
 2. storing documents in database
