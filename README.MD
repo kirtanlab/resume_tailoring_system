@@ -1,2 +1,2 @@
--- App.py for frontend (STREAMLIT)
--- Main.py for backend (FastAPI)
+--Front end Run Command: streamlit run app.py -- App.py for frontend (STREAMLIT)
+--Backend run command: uvicorn main:app -- Main.py for backend (FastAPI)
